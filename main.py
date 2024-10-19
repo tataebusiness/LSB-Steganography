@@ -1,5 +1,8 @@
 import csv
 from PIL import Image
+import tkinter as tk
+from tkinter import filedialog, messagebox
+import os
 
 def message_to_binary(message):
     # Convert the message to binary format
@@ -120,3 +123,87 @@ hide_csv(input_image, csv_file_path, output_image)
 retrieve_csv_file = "./data/retrieve_data.csv"
 retrieve_csv(output_image, retrieve_csv_file)
 
+# GUI
+def select_image():
+    global image_path
+    image_path = filedialog.askopenfilename(
+        title="Select Image", 
+        filetypes=[("Image Files", "*.png *.jpg *.jpeg")]
+    )
+    image_label.config(text=os.path.basename(image_path) if image_path else "No Image Selected")
+
+def select_csv():
+    global csv_path
+    csv_path = filedialog.askopenfilename(
+        title="Select CSV File", 
+        filetypes=[("CSV Files", "*.csv")]
+    )
+    csv_label.config(text=os.path.basename(csv_path) if csv_path else "No CSV File Selected")
+
+def hide_data():
+    if not image_path or not csv_path:
+        messagebox.showerror("Error", "Please select both an image and a CSV file.")
+        return
+
+    # Create output image path automatically (append "_hidden" to original image file name)
+    image_dir, image_file = os.path.split(image_path)
+    file_name, file_extension = os.path.splitext(image_file)
+    output_image = os.path.join(image_dir, f"{file_name}_hidden{file_extension}")
+
+    try:
+        hide_csv(image_path, csv_path, output_image)
+        messagebox.showinfo("Success", f"Data hidden in {output_image}")
+    except Exception as e:
+        messagebox.showerror("Error", f"Failed to hide data: {str(e)}")
+
+def retrieve_data():
+    # Select steganography image to retrieve hidden CSV from
+    global image_path
+    image_path = filedialog.askopenfilename(
+        title="Select Steganography Image", 
+        filetypes=[("Image Files", "*.png *.jpg *.jpeg")]
+    )
+    
+    if not image_path:
+        messagebox.showerror("Error", "Please select an image to retrieve data from.")
+        return
+
+    # Automatically save the retrieved CSV in the same directory as the image
+    image_dir, image_file = os.path.split(image_path)
+    file_name, _ = os.path.splitext(image_file)
+    retrieve_csv_file = os.path.join(image_dir, f"{file_name}_retrieved.csv")
+
+    try:
+        retrieve_csv(image_path, retrieve_csv_file)
+        messagebox.showinfo("Success", f"CSV file retrieved and saved as {retrieve_csv_file}")
+    except Exception as e:
+        messagebox.showerror("Error", f"Failed to retrieve data: {str(e)}")
+
+# Initialize Tkinter window
+root = tk.Tk()
+root.title("Steganography GUI")
+
+image_path = None
+csv_path = None
+
+# Labels and buttons
+image_button = tk.Button(root, text="Select Image", command=select_image)
+image_button.pack(pady=10)
+
+image_label = tk.Label(root, text="No Image Selected")
+image_label.pack(pady=5)
+
+csv_button = tk.Button(root, text="Select CSV File", command=select_csv)
+csv_button.pack(pady=10)
+
+csv_label = tk.Label(root, text="No CSV File Selected")
+csv_label.pack(pady=5)
+
+hide_button = tk.Button(root, text="Hide CSV in Image", command=hide_data)
+hide_button.pack(pady=20)
+
+retrieve_button = tk.Button(root, text="Retrieve CSV from Image", command=retrieve_data)
+retrieve_button.pack(pady=10)
+
+# Start the Tkinter main loop
+root.mainloop()
