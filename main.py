@@ -23,8 +23,6 @@ def csv_to_binary(csv_file_path):
 def binary_to_csv(binary_data, output_csv_file):
     message = binary_to_message(binary_data)
 
-    if message.startswith('\ufeff'):
-        message = message[1:]
     print(message)
     rows = message.split('\n')
     with open(output_csv_file, 'w', newline='', encoding='utf-8') as csvfile:
