@@ -1,6 +1,7 @@
 import csv
 from PIL import Image
 from cryptography.fernet import Fernet
+from Crypto.Hash import MD2
 import tkinter as tk
 from tkinter import filedialog, messagebox
 import json
@@ -20,8 +21,19 @@ def load_display_config():
         config = json.load(config_file)
     return config.get("fields_to_display", [])
 
+# Load student ID column configuration from JSON
+def load_student_id_field():
+    with open("studentid_config.json", "r") as config_file:
+        config = json.load(config_file)
+    return config.get("student_id", "ID")  # Default to "ID" if not specified
+
 # Fields to display (loaded from config)
 fields_to_display = load_display_config()
+student_id_field = load_student_id_field()  # Selected field for student ID
+
+def binary_to_message(binary_data):
+    decrypted_data = cipher.decrypt(binary_data).decode('utf-8')
+    return decrypted_data
 
 # Function to retrieve binary message from image
 def retrieve_message(image_path):
@@ -50,6 +62,14 @@ def binary_to_csv(binary_data):
             csv_data.append(row)
     return csv_data
 
+# Hash the password using MD2 (same as in `testencryption.py`)
+def hash_password(password):
+    hash_obj = MD2.new()
+    hash_obj.update(password.encode())
+    hashed = hash_obj.hexdigest()
+    print(f"Input Password: {password}, Hashed Password: {hashed}")  # Debug print
+    return hashed
+
 # GUI functions for loading image, ID, and password
 def select_image():
     global image_path
@@ -71,14 +91,22 @@ def enter_student_id():
 def prompt_password(student_id):
     def check_password():
         input_password = password_entry.get()
+        # hashed_input_password = hash_password(input_password)  # Hash the input password
         binary_data = retrieve_message(image_path)
-        csv_data = binary_to_csv(binary_data)
+        field_data = binary_data.split("lsb_password")
+        csv_binary_data = field_data[0]
+        password_data = field_data[1]
+        csv_data = binary_to_csv(csv_binary_data)
+        password = binary_to_message(password_data)
+        print(password)
+        
         for row in csv_data:
-            if row.get("ID") == student_id and row.get("password") == input_password:
-                # Display only fields listed in `fields_to_display`
-                display_data = "\n".join([f"{key}: {value}" for key, value in row.items() if key in fields_to_display])
-                messagebox.showinfo("Success", display_data)
-                return
+            if row.get(student_id_field) == student_id:  # Match student ID column dynamically
+                if password == input_password:  # Match hashed password, change to input_password
+                    # Display only fields listed in `fields_to_display`
+                    display_data = "\n".join([f"{key}: {value}" for key, value in row.items() if key in fields_to_display])
+                    messagebox.showinfo("Success", display_data)
+                    return
         messagebox.showerror("Error", "Incorrect password or student data not found.")
 
     password_window = tk.Toplevel(root)
