@@ -25,28 +25,68 @@ def message_to_binary(message):
     encrypted_message = cipher.encrypt(message.encode()).decode('utf-8')
     return ''.join(format(ord(char), '08b') for char in encrypted_message)
 
-# Convert CSV and passwords to binary
 # def csv_to_binary(csv_file_path):
+#     global fieldnames  # Use the global variable
+
+#     # Define the output file path
+#     output_csv_file_path = './source/csvforlsb'
+#     output_directory = os.path.dirname(output_csv_file_path)
+
+#     # Ensure the 'source' directory exists
+#     if not os.path.exists(output_directory):
+#         os.makedirs(output_directory)
+
 #     binary_data = ""
 #     passwords = []
+
 #     with open(csv_file_path, newline='', encoding='utf-8') as csvfile:
-#         reader = csv.DictReader(csvfile)
+#         preview_rows = list(csv.reader(csvfile))  # Read all rows for preview
+
+#         # Skip rows before the selected header row
+#         header_row_index = None
+#         for i, row in enumerate(preview_rows):
+#             if row == fieldnames:  # Match with the selected header row
+#                 header_row_index = i
+#                 break
+
+#         if header_row_index is None:
+#             raise ValueError("Header row not found in the CSV file.")
+
+#         # Use rows starting from the header row
+#         valid_rows = preview_rows[header_row_index + 1:]  # Rows after the header
+#         valid_rows = [','.join(row) for row in valid_rows]  # Keep as comma-separated
+
+#         reader = csv.DictReader(valid_rows, fieldnames=fieldnames)
+
+#         # Add 'password' to fieldnames
+#         fieldnames.append('password')
+
 #         rows = list(reader)
-#         passwords = generate_passwords(len(rows))  # Generate passwords equal to the number of students
+#         passwords = generate_passwords(len(rows))  # Generate passwords for each row
+
+#         # Update rows with passwords
 #         for i, row in enumerate(rows):
-#             row['password'] = passwords[i]  # Add password to each row
+#             row['password'] = passwords[i]
+
+#         # Save updated rows to a new CSV file
+#         with open(output_csv_file_path, mode='w', newline='', encoding='utf-8') as output_csv:
+#             writer = csv.DictWriter(output_csv, fieldnames=fieldnames)
+#             writer.writeheader()
+#             writer.writerows(rows)
+
+#         # Generate binary data from the updated rows
+#         for row in rows:
 #             row_json = json.dumps(row)
 #             encrypted_data = cipher.encrypt(row_json.encode()).decode('utf-8')
 #             binary_data += ''.join(format(ord(char), '08b') for char in encrypted_data) + '00001010'  # Binary newline
+
 #     return binary_data, passwords
-
-
 
 def csv_to_binary(csv_file_path):
     global fieldnames  # Use the global variable
 
-    # Define the output file path
-    output_csv_file_path = './source/newcsv.csv'
+    # Define the output file path with the correct extension
+    output_csv_file_path = './source/csvforlsb.csv'
     output_directory = os.path.dirname(output_csv_file_path)
 
     # Ensure the 'source' directory exists
@@ -102,6 +142,7 @@ def csv_to_binary(csv_file_path):
 # Embed binary message in the image
 def hide_message(image_path, message, output_image):
     img = Image.open(image_path)
+    img = img.convert("RGB")
     binary_message = message + '1111111111111110'  # End signal
     pixels = img.load()
     width, height = img.size
@@ -124,12 +165,8 @@ def hide_message(image_path, message, output_image):
     # Hide CSV and passwords in the image
 def hide_csv(image_path, csv_file_path, output_image):
     binary_data, passwords = csv_to_binary(csv_file_path)
-    # print(binary_data)
     hide_message(image_path, binary_data, output_image)
-    # Save passwords to a file for teacher reference
-    with open("passwords.json", "w") as pw_file:
-        json.dump(passwords, pw_file)
-    messagebox.showinfo("Success", "Data hidden in image.")
+    messagebox.showinfo("Success", "Data hidden in image at "+ output_image)
 
 def select_idfield():
     # Open a new window for field selection
@@ -302,5 +339,3 @@ csv_label = tk.Label(root, text="No CSV File Selected")
 csv_label.pack(pady=5)
 tk.Button(root, text="Hide CSV in Image", command=hide_data).pack(pady=10)
 root.mainloop()
-
-# 

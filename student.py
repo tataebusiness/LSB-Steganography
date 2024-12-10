@@ -52,9 +52,6 @@ def retrieve_message(image_path):
     return ''.join(chr(int(message_bits[i:i+8], 2)) for i in range(0, len(message_bits), 8))
 
 def binary_to_text(binary_data):
-    # Remove any unwanted characters (such as spaces, newlines, etc.)
-    # binary_data = binary_data.replace(' ', '').replace('\n', '')
-
     # Split the binary string into chunks of 8 bits (1 byte per character)
     text = ''.join(chr(int(binary_data[i:i+8], 2)) for i in range(0, len(binary_data), 8))
 
@@ -62,10 +59,7 @@ def binary_to_text(binary_data):
 
 # Decrypt the binary message into a list of JSON objects (rows)
 def binary_to_csv(binary_data):
-    # data = binary_to_text(binary_data)
-    # print(data)
     encrypted_rows = binary_data.split('\n')
-    # print(binary_data)
     csv_data = []
     for encrypted_row in encrypted_rows:
         if(encrypted_row != ''):
@@ -78,14 +72,6 @@ def binary_to_csv(binary_data):
                 print(f"Failed to decrypt row: {encrypted_row}, Error: {e}")
 
     return csv_data
-
-# Hash the password using MD2 (same as in `testencryption.py`)
-def hash_password(password):
-    hash_obj = MD2.new()
-    hash_obj.update(password.encode())
-    hashed = hash_obj.hexdigest()
-    print(f"Input Password: {password}, Hashed Password: {hashed}")  # Debug print
-    return hashed
 
 # GUI functions for loading image, ID, and password
 def select_image():
@@ -108,18 +94,11 @@ def enter_student_id():
 def prompt_password(student_id):
     def check_password():
         input_password = password_entry.get()
-        # hashed_input_password = hash_password(input_password)  # Hash the input password
         binary_data = retrieve_message(image_path)
-        print(binary_data)
-        # field_data = binary_data.split("lsb_password")
-        # csv_binary_data = field_data[0]
-        # password_data = field_data[1]
         csv_data = binary_to_csv(binary_data)
-        # password = binary_to_message(password_data)
         
         for row in csv_data:
             if (row.get(student_id_field) == student_id) & (row.get('password') == input_password):  # Match student ID column dynamically
-                # Display only fields listed in fields_to_display
                 display_data = "\n".join([f"{key}: {value}" for key, value in row.items() if key in fields_to_display])
                 messagebox.showinfo("Success", display_data)
                 return
